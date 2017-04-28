@@ -1,0 +1,14 @@
+[controllers]
+# set your controller node IP and the root password for the node
+controller ansible_ssh_host=10.0.0.5 controller_id=1 ansible_ssh_pass=changeme
+
+
+# Set your compute node IP and the root password for the node
+[computes]
+compute ansible_ssh_host=10.0.0.9 compute_id=1 ansible_ssh_pass=changeme
+
+[simple-setup:children]
+controllers
+computes
+
+

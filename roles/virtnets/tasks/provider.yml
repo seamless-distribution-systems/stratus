@@ -1,0 +1,10 @@
+- debug:
+    msg: "the current date is {{ ansible_date_time.time }}"
+- name: Create the network provider
+  command: openstack network create  --share --external  --provider-physical-network provider --provider-network-type flat provider
+  environment: "{{ adminrc }}"
+  ignore_errors: True
+- name: Create a subnet on the network
+  command: openstack subnet create --network provider --allocation-pool start={{ start_provider_subnet_pool_ip }},end={{ end_provider_subnet_pool_ip }} --dns-nameserver {{ provider_dns }} --gateway {{ provider_gateway }} --subnet-range {{ provider_subnet_cidr }} provider 
+  environment: "{{ adminrc }}" 
+  ignore_errors: True

@@ -1,0 +1,69 @@
+
+# Network
+
+- name: Create the Neutron DB
+  mysql_db: name=neutron state=present
+- name: Grant permissions to Neutron DB
+  mysql_user: name=neutron host=controller password={{ neutron_db_pass }} priv="neutron.*:ALL,GRANT" state=present
+- name: Register Neutron to openstack
+  shell: openstack {{ item }}
+  with_items:
+    - user create --domain default --password {{ neutron_user_pass }} neutron
+    - role add --project service --user neutron admin
+    - service create --name neutron --description "OpenStack Networking" network
+    - endpoint create --region {{ region_one }} network public http://controller:9696
+    - endpoint create --region {{ region_one }} network internal http://controller:9696
+    - endpoint create --region {{ region_one }} network admin http://controller:9696
+  environment: "{{ adminrc }}"
+  ignore_errors: True
+# # Networking option 2 ( Self - Service Networks)
+- name: Install the packages
+  yum: name={{ item }}
+  with_items:
+    - openstack-neutron
+    - openstack-neutron-ml2
+    - openstack-neutron-linuxbridge
+    - ebtables
+- name: Copy /etc/neutron/neutron.conf
+  template: src=../templates/neutron.conf dest=/etc/neutron/neutron.conf
+- name: Copy /etc/neutron/plugins/ml2/ml2_conf.ini
+  template: src=../templates/ml2_conf.ini dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+- name: Copy /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+  template: src=../templates/linuxbridge_agent.ini dest=/etc/neutron/plugins/ml2/linuxbridge_agent.ini
+- name: Copy /etc/neutron/l3_agent.ini
+  template: src=../templates/l3_agent.ini dest=/etc/neutron/l3_agent.ini
+- name: Copy /etc/neutron/dhcp_agent.ini
+  template: src=../templates/dhcp_agent.ini dest=/etc/neutron/dhcp_agent.ini
+- name: Copy /etc/neutron/metadata_agent.ini
+  template: src=../templates/metadata_agent.ini dest=/etc/neutron/metadata_agent.ini
+- name: Configure Nova (/etc/nova/nova.conf) to use Neutron
+  blockinfile:
+    path: /etc/nova/nova.conf
+    block: |
+      [neutron]
+      url = http://controller:9696
+      auth_url = http://controller:35357
+      auth_type = password
+      project_domain_name = Default
+      user_domain_name = Default
+      region_name = {{ region_one }}
+      project_name = service
+      username = neutron
+      password = {{ neutron_user_pass }}
+      service_metadata_proxy = True
+      metadata_proxy_shared_secret = {{ metadata_secret_controller }}
+- name: Create symlink between ml2_conf.ini and /etc/neutron/plugin.ini
+  file: src=/etc/neutron/plugins/ml2/ml2_conf.ini dest=/etc/neutron/plugin.ini state=link
+- name: Populate Neutron DB
+  command: sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+- name: Restart Nova api service
+  systemd: name=openstack-nova-api.service state=restarted
+- name: Start and Enable Neutron services
+  systemd: name={{ item }} enabled=yes state=started
+  with_items:
+    - neutron-server.service
+    - neutron-linuxbridge-agent.service
+    - neutron-dhcp-agent.service
+    - neutron-metadata-agent.service
+    - neutron-l3-agent.service
+

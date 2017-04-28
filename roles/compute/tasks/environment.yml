@@ -1,0 +1,46 @@
+
+# Environment
+- debug: 
+    msg: "the current time is {{ ansible_date_time.time }}"
+- name: Sync with ntp server (pool.ntp.org)
+  shell: ntpdate pool.ntp.org
+  ignore_errors: True
+- name: Base pakgs
+  yum: name={{ item }} state=present
+  with_items:
+    - libselinux-python
+    - mysql-devel
+    - gcc
+    - python-devel
+    - wget
+    - vim
+- name: download pip
+  command: wget http://bootstrap.pypa.io/get-pip.py
+- name: Installing pip
+  command: python /root/get-pip.py
+- name: Disbling NetworkManager
+  systemd: name=NetworkManager.service enabled=no state=stopped
+- name: python for mysql
+  pip: name=MySQL-python
+- name: Writing to /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ controller }} controller
+      {{ compute }} compute
+- name: Install NTP
+  yum: name=chrony
+- name: Copy chrony.conf
+  template: src=../templates/chrony.conf dest=/etc/chrony.conf
+- name: Start and Enable chrony
+  systemd: name=chronyd.service enabled=yes state=started
+- name: Enable the OpenStack repository
+  yum: name=centos-release-openstack-newton
+#- name: Upgrade the packages on your host
+#  yum: name="*" state=latest
+- name: Install the OpenStack client
+  yum: name={{ item }}
+  with_items:
+    - python-openstackclient
+    - openstack-selinux
+

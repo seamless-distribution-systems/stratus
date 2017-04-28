@@ -1,0 +1,47 @@
+
+# Identity
+
+- name: Create keystone DB
+  mysql_db: name=keystone state=present
+- name: Grant permissions to keystone DB
+  mysql_user: name=keystone host={{ item }} password={{ keystone_db_pass }} priv="keystone.*:ALL,GRANT" state=present
+  with_items:
+    - controller
+- name: Install keystone,httpd,mod_wsgi
+  yum: name={{ item }}
+  with_items:
+    - openstack-keystone
+    - httpd
+    - mod_wsgi
+- name: Copy /etc/keystone/keystone.conf
+  template: src=../templates/keystone.conf dest=/etc/keystone/keystone.conf
+- name: Populate the Identity service database
+  command: sh -c "keystone-manage db_sync" keystone
+- name: Initialize Fernet key repositories
+  shell: keystone-manage {{ item }} --keystone-user keystone --keystone-group keystone
+  with_items:
+    - fernet_setup
+    - credential_setup
+- name: Bootstrap the Identity service
+  shell: keystone-manage bootstrap --bootstrap-password {{ admin_user_pass }} --bootstrap-admin-url http://controller:35357/v3/ --bootstrap-internal-url http://controller:35357/v3/ --bootstrap-public-url http://controller:5000/v3/ --bootstrap-region-id {{ region_one }}
+- name: Configure the Apache HTTP server
+  blockinfile:
+    path: /etc/httpd/conf/httpd.conf
+    block: |
+      ServerName controller
+- name: Create a link to the /usr/share/keystone/wsgi-keystone.conf
+  file: src=/usr/share/keystone/wsgi-keystone.conf dest=/etc/httpd/conf.d/wsgi-keystone.conf state=link
+- name: Start and Enable httpd
+  systemd: name=httpd.service enabled=yes state=started
+- name: Copy RC file for ADMIN
+  template: src=../templates/adminrc dest=/root/adminrc
+- name: Create a domain, projects, users, and roles
+  shell: openstack {{ item }}
+  with_items:
+    - project create --domain default --description "Service Project" service
+    - project create --domain default --description "Demo Project" demo
+    - user create --domain default --password {{ demo_user_pass }} demo
+    - role create user
+    - role add --project demo --user demo user
+  environment: "{{ adminrc }}"
+  ignore_errors: True

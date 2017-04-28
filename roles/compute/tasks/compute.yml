@@ -1,0 +1,23 @@
+
+# Compute
+
+- name: Install nova packages
+  yum: name=openstack-nova-compute
+- name: Copy /etc/nova/nova.conf
+  template: src=../templates/nova.conf dest=/etc/nova/nova.conf
+- name: Check hardware acceleration
+  shell: egrep -c '(vmx|svm)' /proc/cpuinfo
+  register: hwacc
+- name: Edit libvirt in nova.conf
+  lineinfile:
+    path: /etc/nova/nova.conf
+    regexp: "virt_type = qemu"
+    line: 'virt_type = kvm'
+    state: present
+  when: hwacc.stdout > 0
+- name: Start and Enable Nova services
+  systemd: name={{ item }} enabled=yes state=started
+  with_items:
+    - libvirtd.service
+    - openstack-nova-compute.service
+

@@ -1,0 +1,4 @@
+---
+- include: provider.yml
+- include: selfservice.yml
+- include: pre_instance_launch.yml

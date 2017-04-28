@@ -1,0 +1,13 @@
+
+# Dashboard
+
+- name: Install the packages
+  yum: name=openstack-dashboard
+- name: Copy /etc/openstack-dashboard/local_settings
+  template: src=../templates/local_settings dest=/etc/openstack-dashboard/local_settings
+- name: Start and Enable Horizon services
+  systemd: name={{ item }} enabled=yes state=restarted
+  with_items:
+    - httpd.service
+    - memcached.service
+

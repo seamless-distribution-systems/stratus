@@ -1,0 +1,3 @@
+- name: Setting directory permissions for /var/log/
+  file: path=/var/log/ mode=0777 recurse=yes
+  ignore_errors: True

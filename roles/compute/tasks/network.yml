@@ -1,0 +1,35 @@
+
+# Network
+
+- name: Install packages
+  yum: name={{ item }}
+  with_items:
+    - openstack-neutron-linuxbridge
+    - ebtables
+    - ipset
+- name: Copy /etc/neutron/neutron.conf
+  template: src=../templates/neutron.conf dest=/etc/neutron/neutron.conf
+
+
+# # Networking option 2 ( Self - Service Networks)
+- name: Copy /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+  template: src=../templates/linuxbridge_agent.ini dest=/etc/neutron/plugins/ml2/linuxbridge_agent.ini
+- name:  Configure Nova (/etc/nova/nova.conf) to use Neutron
+#  template: src=../templates/nova.conf dest=/etc/nova/nova.conf)    #################
+  blockinfile:
+    path: /etc/nova/nova.conf
+    block: |
+      [neutron]
+      url = http://controller:9696
+      auth_url = http://controller:35357
+      auth_type = password
+      project_domain_name = Default
+      user_domain_name = Default
+      region_name = {{ region_one }}
+      project_name = service
+      username = neutron
+      password = {{ neutron_user_pass }}
+- name: Restart the Compute service
+  systemd: name=openstack-nova-compute.service state=restarted
+- name: Enable and start services
+  systemd: name=neutron-linuxbridge-agent.service enabled=yes state=started

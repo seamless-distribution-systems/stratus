@@ -1,0 +1,25 @@
+- name: Setting directory permissions for /var/log [ INSTALLATION FOR CONTROLLER IS DONE, RESTARTING SERVICES ]
+  file: path=/var/log/{{ item }} owner={{ item }} group={{ item }} recurse=yes
+  with_items:
+    - glance
+  ignore_errors: True
+- name: Restart all services
+  systemd: name={{ item }} state=restarted
+  with_items:
+    - openstack-nova-api.service
+    - openstack-nova-consoleauth.service
+    - openstack-nova-scheduler.service
+    - openstack-nova-conductor.service
+    - openstack-nova-novncproxy.service 
+    - httpd.service
+    - memcached.service
+    - openstack-glance-api.service
+    - openstack-glance-registry.service
+    - neutron-server.service
+    - neutron-linuxbridge-agent.service
+    - neutron-dhcp-agent.service
+    - neutron-metadata-agent.service
+    - neutron-l3-agent.service
+
+- debug: 
+    msg: "the current time is {{ ansible_date_time.time }}"

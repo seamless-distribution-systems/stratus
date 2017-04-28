@@ -1,0 +1,44 @@
+- name: Create glance DB
+  mysql_db: name=glance state=present
+- name: Grant permissions to glance DB
+  mysql_user: name=glance host={{ item }} password={{ glance_db_pass }} priv="glance.*:ALL,GRANT" state=present
+  with_items:
+    - controller
+- name: Create the glance user
+  command: openstack user create --domain default --password {{ glance_user_pass }} glance
+  environment: "{{ adminrc }}"
+  ignore_errors: True
+- name: Add the admin role to the glance user and service project
+  command: openstack role add --project service --user glance admin
+  environment: "{{ adminrc }}"
+- name: Check if glance service entity exists
+  shell: '[[ -z $(openstack service list|grep glance) ]] && echo "1" || echo "2"'
+  register: glance_service_presence
+- name: Create the glance service entity
+  command: openstack service create --name glance --description "OpenStack Image" image
+  environment: "{{ adminrc }}"
+  when: glance_service_presence.stdout == '1'
+- name: Create the Image service API endpoints
+  command: openstack endpoint create --region RegionOne image {{ item }} http://controller:9292
+  with_items:
+    - public
+    - internal
+    - admin
+  environment: "{{ adminrc }}"
+  ignore_errors: True
+- name: Install glance packages
+  yum: name=openstack-glance
+#- name: Create Glance image storage location
+#  command: mkdir {{ glance_img_location }}
+#  ignore_errors: True
+- name: Copy glance-api.conf
+  template: src=../templates/glance-api.conf dest=/etc/glance/glance-api.conf
+- name: Copy glance-registry.conf
+  template: src=../templates/glance-registry.conf dest=/etc/glance/glance-registry.conf
+- name: Populate the Image service database
+  command: sh -c "glance-manage db_sync" glance
+- name: Enable and Start services
+  systemd: name={{ item }} enabled=yes state=started
+  with_items:
+    - openstack-glance-api.service
+    - openstack-glance-registry.service

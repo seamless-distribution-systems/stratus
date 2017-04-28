@@ -1,0 +1,6 @@
+---
+- include: permissions.yml
+- include: environment.yml 
+- include: compute.yml 
+- include: network.yml
+- include: post_install.yml

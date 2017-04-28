@@ -1,0 +1,91 @@
+# Target system details
+# Put the IP addresses of controller and compute that was put in inventory file under section [controllers] and [compute]
+
+#controller: "{{ hostvars.controller.ansible_ssh_host }}"
+#compute: "{{ hostvars.compute.ansible_ssh_host }}"
+controller: 10.0.0.5
+compute: 10.0.0.9
+
+
+# Management Network
+management_subnet: 10.0.0.0/24
+man_ip_controller_node: "{{ controller }}"
+man_ip_compute_node: "{{ compute }}"
+
+# Env
+#ntp_server: 
+
+# RabbitMQ 
+rabbit_pass: RA_PASS
+
+#Keystone
+keystone_db_pass: KY_DBPASS
+
+# Regions
+region_one: RegionOne
+
+# Users
+ #Admin
+admin_user_pass: AD_PASS
+demo_user_pass: DM_PASS
+
+# Nova
+nova_user_pass: NO_PASS
+nova_db_pass: NO_DBPASS
+placement_user_pass: PL_PASS
+
+#Neutron
+COMMON_PROVIDER_INTERAFACE: enp1s0
+
+neutron_db_pass: NEU_DBPASS
+neutron_user_pass: NEU_PASS
+metadata_secret_controller: METADATA_SECRET
+### For controller node 
+provider_interface_controller: "{{ COMMON_PROVIDER_INTERAFACE }}"
+overlay_interface_ip_controller: "{{ ansible_default_ipv4.address }}"
+### For compute node
+provider_interface_compute: enp1s0
+overlay_interface_ip_compute: "{{ ansible_default_ipv4.address }}"
+
+
+
+#Glance
+glance_user_pass: GL_PASS
+glance_db_pass: GL_DBPASS
+glance_img_location: /var/lib/glance/images/
+
+
+
+# Self service
+selfservice_gateway: 192.168.0.1
+selfservice_cidr: 192.168.0.0/24
+
+#Provider
+start_provider_subnet_pool_ip: 10.10.65.50
+end_provider_subnet_pool_ip: 10.10.65.55
+provider_dns: 8.8.8.8
+provider_gateway: 10.10.64.1
+provider_subnet_cidr: 10.10.64.0/23
+
+#RC
+adminrc:
+  OS_PROJECT_DOMAIN_NAME: Default
+  OS_USER_DOMAIN_NAME: Default
+  OS_PROJECT_NAME: admin
+  OS_USERNAME: admin
+  OS_PASSWORD: AD_PASS
+  OS_AUTH_URL: http://controller:35357/v3
+  OS_IDENTITY_API_VERSION: 3
+  OS_IMAGE_API_VERSION: 2
+
+
+demorc:
+  OS_PROJECT_DOMAIN_NAME: Default
+  OS_USER_DOMAIN_NAME: Default
+  OS_PROJECT_NAME: demo
+  OS_USERNAME: demo
+  OS_PASSWORD: DM_PASS
+  OS_AUTH_URL: http://controller:35357/v3
+  OS_IDENTITY_API_VERSION: 3
+  OS_IMAGE_API_VERSION: 2
+                          
