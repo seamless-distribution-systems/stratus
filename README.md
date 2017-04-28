@@ -1,7 +1,9 @@
 # Stratus
 
 
-A Bare-Metal ansible installer for Openstack Cloud (Centos). 
+A Bare-Metal ansible installer for Openstack Cloud (Centos7).
+The official Openstack dumentation is here: https://docs.openstack.org/ocata/install-guide-rdo/
+ 
 WYSIWYG:
 
   - Identity service (Keystone)
