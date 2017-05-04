@@ -13,7 +13,7 @@ WYSIWYG:
   - Networking service (Neutron)
 
 
-# Hardware things
+# Hardware Stuff
 
  - Take two servers(nodes) one will be your controller node and other, compute node
    > Minimun requirements:
@@ -94,7 +94,7 @@ If we want a floating ip pool of say 90 IPs, we can set the provider subnet rang
   provider_subnet_cidr: <provider-net-range> like 203.0.113.0/24
 ```
 
-# Before executing
+# Pre Execution
 ---
   - Run the ansible scripts as root from the machine/VM (deployer)
   - SSH to the controller and compute nodes from the deployer machine/VM with root user
