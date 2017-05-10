@@ -7,7 +7,7 @@ The official Openstack dumentation is here: https://docs.openstack.org/ocata/ins
 WYSIWYG:
 
   - Identity service (Keystone)
-  - Image service (Glacier)
+  - Image service (Glance)
   - Compute service (Nova)
   - Dashboard (Horizon)
   - Networking service (Neutron)
@@ -75,7 +75,7 @@ The output shall look somthing like this:
 3: eth02: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
     link/ether 00:e0:4c:04:0f:0e brd ff:ff:ff:ff:ff:ff
 ```
-
+- Here you can see ( in the above excerpt), eth02 is kept unnumbered, i.e. no IP address for eth02.
 
 - If you do not have two different networks such as 10.0.0.0/24 and 203.0.113.0/24. You can split your existing network say w.x.y.z/24 and create a new net range with
   another router.
@@ -140,6 +140,50 @@ ansible-playbook site.yml -i inventory
 ```
 
 # About your cirros instance
- We are downloading a cirros image and the user-password combo for SSH is:
+  We are downloading a cirros image and the user-password combo for SSH is:
   - User: cirros
   -  Password: cubswin:)
+
+# Launching an instance
+  Log into the Horizon dashboard at such an address:
+  - http://controller/dashboard (Where controller is the IP address of your controller node)
+
+  Steps to launch your first cirros instance:
+  1) Logging in with credentials of demo user. You can find this in group_vars/simple-setup file, under section #RC.
+     It looks something like this,
+```sh       
+demorc:
+  OS_PROJECT_DOMAIN_NAME: Default
+  OS_USER_DOMAIN_NAME: Default
+  OS_PROJECT_NAME: demo
+  OS_USERNAME: demo
+  OS_PASSWORD: DM_PASS
+  OS_AUTH_URL: http://controller:35357/v3
+  OS_IDENTITY_API_VERSION: 3
+  OS_IMAGE_API_VERSION: 2
+```
+  Here,
+    Domain: default
+    User Name: demo
+    Password: DM_PASS 
+    ![Screenshot](screenshots/login.jpeg)  
+   
+  2) Go to instances tab on your left.
+  
+    ![Screenshot](screenshots/instances_tab.jpeg)
+
+  3) Click on launch instance button.
+  
+    ![Screenshot](screenshots/launch_instance.jpeg)
+
+  4) You'll get such a launch panel.
+  
+    ![Screenshot](screenshots/launch_panel.jpeg)
+
+  5) Getting the key pair for your instance, among other things,
+
+    ![Screenshot](screenshots/keypair.jpeg)
+
+    Create a new key pair, download the .pem file, which you'll use to log into your instance.
+    Once a key pair is created, it will appear in the list of keypairs below. Click in "+" icon to use
+    it for your instance. 
