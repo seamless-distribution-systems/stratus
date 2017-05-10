@@ -169,19 +169,15 @@ demorc:
     ![Screenshot](screenshots/login.jpeg)  
    
   2) Go to instances tab on your left.
-  
     ![Screenshot](screenshots/instances_tab.jpeg)
 
   3) Click on launch instance button.
-  
     ![Screenshot](screenshots/launch_instance.jpeg)
 
   4) You'll get such a launch panel.
-  
     ![Screenshot](screenshots/launch_panel.jpeg)
 
   5) Getting the key pair for your instance, among other things,
-
     ![Screenshot](screenshots/keypair.jpeg)
 
     Create a new key pair, download the .pem file, which you'll use to log into your instance.
