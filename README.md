@@ -168,6 +168,7 @@ demorc:
     Password: DM_PASS 
     ![Screenshot](screenshots/login.jpeg)  
    
+ 
   2) Go to instances tab on your left.
     ![Screenshot](screenshots/instances_tab.jpeg)
 
@@ -180,6 +181,6 @@ demorc:
   5) Getting the key pair for your instance, among other things,
     ![Screenshot](screenshots/keypair.jpeg)
 
-    Create a new key pair, download the .pem file, which you'll use to log into your instance.
-    Once a key pair is created, it will appear in the list of keypairs below. Click in "+" icon to use
-    it for your instance. 
+ Create a new key pair, download the .pem file, which you'll use to log into your instance.
+ Once a key pair is created, it will appear in the list of keypairs below. Click in "+" icon to use
+ it for your instance. 
