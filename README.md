@@ -166,7 +166,8 @@ demorc:
     Domain: default
     User Name: demo
     Password: DM_PASS 
-    ![Screenshot](screenshots/login.jpeg)  
+ 
+   ![Screenshot](screenshots/login.jpeg)  
    
  
   2) Go to instances tab on your left.
