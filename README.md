@@ -25,7 +25,7 @@ These are the basic modules that are required to launch an instance and be able 
    Say, one network has the address range 10.0.0.0/24(management net) with gateway at 10.0.0.1 and another has 203.0.113.0/24(provider net) with gateway at 203.0.113.1
    Attach Ethernet cables from management net to eth01 of both Controller and compute node.
    Attach Ethernet cables from provider net to eth02 of both Controller and compute node.
-   ( In centos, you'll have names as enp01s and enp02s, not eth01/02 )
+   ( In centos, you'll have names as enp1s0 and enp2s0, not eth01/02 )
 
 
 ### Specimen /etc/sysconfig/network-scripts/ifcfg-eth01 (both controller and compute nodes)
@@ -142,4 +142,4 @@ ansible-playbook site.yml -i inventory
 # About your cirros instance
  We are downloading a cirros image and the user-password combo for SSH is:
   - User: cirros
-    Password: cubswin:)
+  -  Password: cubswin:)
