@@ -163,9 +163,9 @@ demorc:
   OS_IMAGE_API_VERSION: 2
 ```
   Here,
-    - Domain: default
-    - User Name: demo
-    - Password: DM_PASS 
+  - Domain: default
+  - User Name: demo
+  - Password: DM_PASS 
  
    ![Screenshot](screenshots/login.jpeg)  
    
