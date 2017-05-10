@@ -1,8 +1,7 @@
 # Target system details
-# Put the IP addresses of controller and compute that was put in inventory file under section [controllers] and [compute]
+# All values of username and passwords here are customizable
 
-#controller: "{{ hostvars.controller.ansible_ssh_host }}"
-#compute: "{{ hostvars.compute.ansible_ssh_host }}"
+# Put the IP addresses of controller and compute that was put in inventory file under section [controllers] and [compute]
 controller: 10.0.0.5
 compute: 10.0.0.9
 
@@ -12,8 +11,6 @@ management_subnet: 10.0.0.0/24
 man_ip_controller_node: "{{ controller }}"
 man_ip_compute_node: "{{ compute }}"
 
-# Env
-#ntp_server: 
 
 # RabbitMQ 
 rabbit_pass: RA_PASS
@@ -35,16 +32,15 @@ nova_db_pass: NO_DBPASS
 placement_user_pass: PL_PASS
 
 #Neutron
-COMMON_PROVIDER_INTERAFACE: enp1s0
-
+COMMON_PROVIDER_INTERAFACE: eth0
 neutron_db_pass: NEU_DBPASS
 neutron_user_pass: NEU_PASS
 metadata_secret_controller: METADATA_SECRET
-### For controller node 
+  ### For controller node 
 provider_interface_controller: "{{ COMMON_PROVIDER_INTERAFACE }}"
 overlay_interface_ip_controller: "{{ ansible_default_ipv4.address }}"
-### For compute node
-provider_interface_compute: enp1s0
+  ### For compute node
+provider_interface_compute: "{{ COMMON_PROVIDER_INTERAFACE }}"
 overlay_interface_ip_compute: "{{ ansible_default_ipv4.address }}"
 
 

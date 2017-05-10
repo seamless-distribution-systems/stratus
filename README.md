@@ -12,22 +12,23 @@ WYSIWYG:
   - Dashboard (Horizon)
   - Networking service (Neutron)
 
+These are the basic modules that are required to launch an instance and be able to  ssh to it.
 
-# Hardware Stuff
+# Hardware things
 
  - Take two servers(nodes) one will be your controller node and other, compute node
    > Minimun requirements:
      Controller Node: 1 processor, 4 GB memory, 5 GB storage and 2 Ethernet cards (say eth01 and eth02)
      Compute Node: 1 processor, 2 GB memory, and 10 GB storage and Ethernet cards (say eth01 and eth02)
 
- - You need to different network address space each for usage in the two Ethernet cards.
+ - You need two different network address space each for usage in the two Ethernet cards.
    Say, one network has the address range 10.0.0.0/24(management net) with gateway at 10.0.0.1 and another has 203.0.113.0/24(provider net) with gateway at 203.0.113.1
    Attach Ethernet cables from management net to eth01 of both Controller and compute node.
    Attach Ethernet cables from provider net to eth02 of both Controller and compute node.
+   ( In centos, you'll have names as enp01s and enp02s, not eth01/02 )
 
 
-
-### Specimen /etc/sysconfig/network-scripts/ifcfg-eth01
+### Specimen /etc/sysconfig/network-scripts/ifcfg-eth01 (both controller and compute nodes)
 ```sh
 NAME="eth01"
 DEVICE="eth01"
@@ -39,7 +40,8 @@ BOOTPROTO=dhcp
 TYPE=Ethernet
 ```
 
-### Specimen /etc/sysconfig/network-scripts/ifcfg-eth02
+
+### Specimen /etc/sysconfig/network-scripts/ifcfg-eth02 (both controller and compute nodes)
 ```sh
 NAME="eth02"
 DEVICE="eth02"
@@ -51,8 +53,11 @@ BOOTPROTO=none
 TYPE=Ethernet
 NM_CONTROLLED=yes
 ```
-- eth02 is to be kept unnumbered, as you can see in the provided specimen of network-scripts
+- eth02 is to be kept unnumbered (but wires go in the Ethernet card), as you can see in the provided specimen of network-scripts
 
+### Output of 'ip a' command on both controller and compute nodes
+
+The output shall look somthing like this:
 
 ```sh
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN 
@@ -73,8 +78,15 @@ NM_CONTROLLED=yes
 
 
 - If you do not have two different networks such as 10.0.0.0/24 and 203.0.113.0/24. You can split your existing network say w.x.y.z/24 and create a new net range with
-  a router.
+  another router.
 
+
+Now,
+
+# Edit the configurations
+
+You need to care about two files, to configure according to your setup requirement.
+First,
  - ### In file group_vars/simple-setup, change
 
 ```sh
@@ -87,17 +99,39 @@ NM_CONTROLLED=yes
 If we want a floating ip pool of say 90 IPs, we can set the provider subnet range like the following:
 
 ```sh
+  #Provider
   start_provider_subnet_pool_ip: <start-ip-range-for-floating-ip> like 203.0.113.10
   end_provider_subnet_pool_ip: <end-ip-range-for-floating-ip> like 203.0.113.100
   provider_dns: 8.8.8.8
   provider_gateway: <gateway-ip-of-provider-node> like 203.0.113.1
   provider_subnet_cidr: <provider-net-range> like 203.0.113.0/24
 ```
+Then,
+The self-service network config, can also be changed accordingly, but you may choose to leave
+the IP ranges as present by default, which is,  
 
-# Pre Execution
----
-  - Run the ansible scripts as root from the machine/VM (deployer)
-  - SSH to the controller and compute nodes from the deployer machine/VM with root user
+```sh
+   # Self service
+   selfservice_gateway: 192.168.0.1
+   selfservice_cidr: 192.168.0.0/24
+```
+This means your instances will be assigned private IPs in this range.
+
+Lastly,
+ - ### In the inventory file, change/set
+   ansible_ssh_host value according to your controller and compute node IPs and also ansible_ssh_pass 
+
+```sh
+   [controllers]
+   # set your controller node IP and the root password for the node
+   controller ansible_ssh_host=10.0.0.3 controller_id=1 ansible_ssh_pass=changeme
+
+
+   # Set your compute node IP and the root password for the node
+   [computes]
+   compute ansible_ssh_host=10.0.0.5 compute_id=1 ansible_ssh_pass=changeme
+```
+
 
 # Execution
 
@@ -105,4 +139,7 @@ If we want a floating ip pool of say 90 IPs, we can set the provider subnet rang
 ansible-playbook site.yml -i inventory
 ```
 
-
+# About your cirros instance
+ We are downloading a cirros image and the user-password combo for SSH is:
+  - User: cirros
+    Password: cubswin:)
