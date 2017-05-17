@@ -45,13 +45,13 @@ TYPE=Ethernet
 ```sh
 NAME="eth02"
 DEVICE="eth02"
-ONBOOT=no
+ONBOOT=yes
 NETBOOT=yes
 UUID="18a6bab4-8584-415e-a975-2486721ef829"
 IPV6INIT=yes
 BOOTPROTO=none
 TYPE=Ethernet
-NM_CONTROLLED=yes
+NM_CONTROLLED=no
 ```
 - eth02 is to be kept unnumbered (but wires go in the Ethernet card), as you can see in the provided specimen of network-scripts
 
