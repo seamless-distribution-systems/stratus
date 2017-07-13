@@ -2,6 +2,12 @@
 
 A Bare-Metal ansible installer for Openstack Cloud (Centos7).
 The official Openstack dumentation is here: https://docs.openstack.org/newton/install-guide-rdo/
+
+Installation Video:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/B-A88ROluLI" frameborder="0" allowfullscreen></iframe>
+
+
  
 WYSIWYG:
 
