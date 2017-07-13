@@ -1,0 +1,88 @@
+- name: Create cinder DB
+  mysql_db: name=cinder state=present
+
+- name: Grant permissions to cinder DB
+  mysql_user: name=cinder host={{ item }} password={{ cinder_db_pass }} priv="cinder.*:ALL,GRANT" state=present
+  with_items:
+    - controller
+    - cinder
+    - localhost 
+    - compute
+
+- name: Check if cinder service already present
+  shell: '[[ -z $(openstack service list|grep cinder) ]] && echo "not present" || echo "present"'
+  register: cinder_service_presence
+  environment: "{{ adminrc }}"
+
+- name: Create the cinder user
+  command: openstack user create --domain default --password {{ cinder_pass }} cinder
+  when: cinder_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Add the admin role to the cinder user
+  command: openstack role add --project service --user cinder admin
+  when: cinder_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the cinder and cinderv2 service entities
+  command: openstack service create --name {{ item.name }} --description "OpenStack Block Storage" {{ item.service }}
+  with_items:
+    - {name: "cinder",service: "volume"}
+    - {name: "cinderv2",service: "volumev2"}
+  when: cinder_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the Block Storage service API endpoints part I
+  command: openstack endpoint create --region {{ region_one }} volume {{ item }} http://controller:8776/v1/%\(tenant_id\)s
+  with_items:
+    - public
+    - internal
+    - admin
+  when: cinder_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the Block Storage service API endpoints part II
+  command: openstack endpoint create --region {{ region_one }} volumev2 {{ item }} http://controller:8776/v2/%\(tenant_id\)s
+  with_items:
+    - public
+    - internal
+    - admin
+  when: cinder_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+
+- name: Installing pkgs
+  yum: name={{ item }}
+  with_items:
+    - openstack-cinder
+
+- name: Configure cinder
+  template: src=../templates/cinder.conf dest=/etc/cinder/cinder.conf
+
+- name: Populate the Block Storage database
+  shell: su -s /bin/sh -c "cinder-manage db sync" cinder
+
+- name: Configure Compute to use Block Storage
+  blockinfile:
+    path: /etc/nova/nova.conf
+    insertafter: "[cinder]"
+    content: |
+      os_region_name = {{ region_one }}
+
+
+#- name: Setting directory permissions for /var/log/cinder
+#  file: path=/var/log/cinder mode=0777 recurse=yes owner=cinder group=cinder
+#  ignore_errors: True
+
+
+- name: Start the Orchestration services
+  systemd: name={{ item }} enabled=yes state=restarted
+  with_items:
+    - openstack-nova-api.service
+    - openstack-cinder-api.service
+    - openstack-cinder-scheduler.service

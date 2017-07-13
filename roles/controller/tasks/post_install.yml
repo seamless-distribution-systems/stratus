@@ -1,4 +1,4 @@
-- name: Setting directory permissions for /var/log [ INSTALLATION FOR CONTROLLER IS DONE, RESTARTING SERVICES ]
+- name: Setting directory permissions for /var/log/
   file: path=/var/log/{{ item }} owner={{ item }} group={{ item }} recurse=yes
   with_items:
     - glance
@@ -20,6 +20,3 @@
     - neutron-dhcp-agent.service
     - neutron-metadata-agent.service
     - neutron-l3-agent.service
-
-- debug: 
-    msg: "the current time is {{ ansible_date_time.time }}"

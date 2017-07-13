@@ -1,10 +1,11 @@
 
 # Environment
-- debug: 
-    msg: "the current time is {{ ansible_date_time.time }}"
-- name: Sync with ntp server (pool.ntp.org)
-  shell: ntpdate pool.ntp.org
-  ignore_errors: True
+- name: Install NTP
+  yum: name=chrony
+- name: Copy chrony.conf
+  template: src=../templates/chrony.conf dest=/etc/chrony.conf
+- name: Start and Enable chrony
+  systemd: name=chronyd.service enabled=True state=started
 - name: Base pakgs
   yum: name={{ item }} state=present
   with_items:
@@ -14,12 +15,6 @@
     - python-devel
     - wget
     - vim
-- name: Install NTP
-  yum: name=chrony
-- name: Copy chrony.conf
-  template: src=../templates/chrony.conf dest=/etc/chrony.conf
-- name: Start and Enable chrony
-  systemd: name=chronyd.service enabled=True state=started
 - name: download pip
   get_url: url=http://bootstrap.pypa.io/get-pip.py dest=/root/
 - name: Installing pip
@@ -42,8 +37,9 @@
     block: |
       {{ controller }} controller
       {{ compute }} compute
+      {{ cinder }} cinder
 - name: Enable the OpenStack repository
-  yum: name=centos-release-openstack-ocata
+  yum: name=centos-release-openstack-newton
 #- name: Upgrade the packages on your host
 #  yum: name="*" state=latest
 - name: Install the OpenStack client
@@ -67,12 +63,20 @@
   yum: name=rabbitmq-server
 - name: Start and Enable Rabbitmq
   systemd: name=rabbitmq-server enabled=yes state=started
+
+- name: Check Rabbit user for openstack
+  shell: '[[ -z $(rabbitmqctl list_users|grep openstack) ]] && echo "not present" || echo "present"'
+  register: rabbit_user_presence
+  ignore_errors: True
+
 - name: Add the openstack user and permissions
   shell: rabbitmqctl {{ item }}
   with_items:
     - add_user openstack {{ rabbit_pass }}
     - set_permissions openstack ".*" ".*" ".*"
+  when: rabbit_user_presence.stdout == "not present"
   ignore_errors: True
+
 - name: Install Memcached
   yum: name={{ item }}
   with_items:

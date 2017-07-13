@@ -29,6 +29,13 @@
       project_name = service
       username = neutron
       password = {{ neutron_user_pass }}
+
+#- name: Setting directory permissions for /var/log/neutron
+#  file: path=/var/log/neutron mode=0777 recurse=yes owner=neutron group=neutron
+#  ignore_errors: True
+
+
+
 - name: Restart the Compute service
   systemd: name=openstack-nova-compute.service state=restarted
 - name: Enable and start services

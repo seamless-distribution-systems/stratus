@@ -6,43 +6,29 @@
   with_items:
     - nova_api
     - nova
-    - nova_cell0
 - name: Grant permission to compute DB
   mysql_user: name={{ item }} host=controller password={{ nova_db_pass }} priv="*.*:ALL,GRANT" state=present
   with_items:
     - nova_api
     - nova
-    - nova_cell0
+
+
 - name: Check if glance service entity exists
-  shell: '[[ -z $(openstack service list|grep compute) ]] && echo "1" || echo "2"'
+  shell: '[[ -z $(openstack service list|grep compute) ]] && echo "not present" || echo "present"'
   register: compute_service_presence
+  environment: "{{ adminrc }}"
+
+
 - name: Register Nova to openstack
   shell: openstack {{ item }}
   with_items:
     - user create --domain default --password {{ nova_user_pass }} nova
     - role add --project service --user nova admin
-  environment: "{{ adminrc }}"
-  ignore_errors: True
-- name: Register Nova service to openstack
-  shell: openstack service create --name nova --description "OpenStack Compute" compute
-  when: compute_service_presence.stdout == "1"
-  environment: "{{ adminrc }}"
-  ignore_errors: True
-- name: Register Nova endpoints to openstack
-  shell: openstack {{ item }}
-  with_items:
-#    - user create --domain default --password {{ nova_user_pass }} nova
-#    - role add --project service --user nova admin
-#    - service create --name nova  --description "OpenStack Compute" compute
+    - service create --name nova --description "OpenStack Compute" compute
     - endpoint create --region {{ region_one }} compute public http://controller:8774/v2.1/%\(tenant_id\)s
     - endpoint create --region {{ region_one }} compute internal http://controller:8774/v2.1/%\(tenant_id\)s
     - endpoint create --region {{ region_one }} compute admin http://controller:8774/v2.1/%\(tenant_id\)s
-    - user create --domain default --password {{ placement_user_pass }} placement
-    - role add --project service --user placement admin
-    - service create --name placement --description "Placement API" placement
-    - endpoint create --region {{ region_one }} placement public http://controller/placement
-    - endpoint create --region {{ region_one }} placement internal http://controller/placement
-    - endpoint create --region {{ region_one }} placement admin http://controller/placement
+  when: compute_service_presence.stdout == "not present"
   environment: "{{ adminrc }}"
   ignore_errors: True
 
@@ -54,18 +40,21 @@
     - openstack-nova-console
     - openstack-nova-novncproxy
     - openstack-nova-scheduler
-    - openstack-nova-placement-api
 - name: Copy /etc/nova/nova.conf
   template: src=../templates/nova.conf dest=/etc/nova/nova.conf
-- name: Copy 00-nova-placement-api.conf
-  template: src=../templates/00-nova-placement-api.conf dest=/etc/httpd/conf.d/00-nova-placement-api.conf
+#- name: Setting permissions for /var/log/nova/
+#  command: chown -R nova. /var/log/nova/
 - name: Populate the nova DB
   command: sh -c "{{ item }}" nova
   with_items:
     - nova-manage api_db sync
-    - nova-manage cell_v2 map_cell0
-    - nova-manage cell_v2 create_cell --name=cell1 --verbose
     - nova-manage db sync
+
+#- name: Setting directory permissions for /var/log/nova
+#  file: path=/var/log/nova mode=0777 recurse=yes owner=nova group=nova
+#  ignore_errors: True
+
+
 - name: Start and Enable nova services
   systemd: name={{ item }} enabled=yes state=started
   with_items:
@@ -74,3 +63,4 @@
     - openstack-nova-scheduler.service
     - openstack-nova-conductor.service
     - openstack-nova-novncproxy.service
+

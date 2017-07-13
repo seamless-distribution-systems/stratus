@@ -1,8 +1,7 @@
-# Stratus
-
+### VERSION: NEWTON
 
 A Bare-Metal ansible installer for Openstack Cloud (Centos7).
-The official Openstack dumentation is here: https://docs.openstack.org/ocata/install-guide-rdo/
+The official Openstack dumentation is here: https://docs.openstack.org/newton/install-guide-rdo/
  
 WYSIWYG:
 
@@ -11,6 +10,8 @@ WYSIWYG:
   - Compute service (Nova)
   - Dashboard (Horizon)
   - Networking service (Neutron)
+  - Block Device serice (Cinder)
+  - Monitoring service (Telemetry)
 
 These are the basic modules that are required to launch an instance and be able to  ssh to it.
 
@@ -36,8 +37,12 @@ ONBOOT=yes
 NETBOOT=yes
 UUID="6ae37a9a-5c81-4903-816b-0b8f86aa4542"
 IPV6INIT=yes
-BOOTPROTO=dhcp
+BOOTPROTO=static
 TYPE=Ethernet
+IPADDR=<controller-ip>
+NETMASK=<Mask-range>
+GATEWAY=<gateway-ip>
+DNS1=<dns-ip>
 ```
 
 
@@ -48,7 +53,6 @@ DEVICE="eth02"
 ONBOOT=yes
 NETBOOT=yes
 UUID="18a6bab4-8584-415e-a975-2486721ef829"
-IPV6INIT=yes
 BOOTPROTO=none
 TYPE=Ethernet
 NM_CONTROLLED=no
@@ -92,9 +96,13 @@ First,
 ```sh
    controller: <controller-ip>
    compute: <compute-ip>
+   cinder: <cinder-ip>
    management_subnet: <management-net> like 10.0.0.0/24
    COMMON_PROVIDER_INTERAFACE: <management-net-ethernet-device-name> like eth01
 ```
+>If the both your controller and compute node's management interface name if same (say enp2s0),
+ set COMMON_PROVIDER_INTERAFACE to enp2s0. If they are not same,
+ set the interface name for controller in provider_interface_controller and for compute in provider_interface_compute respectively.
 
 If we want a floating ip pool of say 90 IPs, we can set the provider subnet range like the following:
 
@@ -124,18 +132,25 @@ Lastly,
 ```sh
    [controllers]
    # set your controller node IP and the root password for the node
-   controller ansible_ssh_host=10.0.0.3 controller_id=1 ansible_ssh_pass=changeme
-
+   controller ansible_ssh_host=192.168.100.3 controller_id=1 ansible_ssh_pass=changeme
 
    # Set your compute node IP and the root password for the node
    [computes]
-   compute ansible_ssh_host=10.0.0.5 compute_id=1 ansible_ssh_pass=changeme
+   compute ansible_ssh_host=192.168.100.2 compute_id=1 ansible_ssh_pass=changeme
+
+   # Set you cinder node IP and the root password for the node
+   [cinders]
+   cinder ansible_ssh_host=192.168.100.6 cinder_id=1 ansible_ssh_pass=changeme
 ```
 
 
 # Execution
 
 ```sh
+./run.bash
+
+	or
+
 ansible-playbook site.yml -i inventory
 ```
 

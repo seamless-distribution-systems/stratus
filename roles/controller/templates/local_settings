@@ -53,11 +53,11 @@ SESSION_ENGINE='django.contrib.sessions.backends.cache'
 # use of the decimal point, so valid options would be 2.0 or 3.
 # Minimum compute version to get the instance locked status is 2.9.
 OPENSTACK_API_VERSIONS = {
-#    "data-processing": 1.1,
+    "data-processing": 1.1,
     "identity": 3,
     "image": 2,
     "volume": 2,
-#    "compute": 2,
+    "compute": 2,
 }
 
 # Set this to True if running on a multi-domain model. When this is enabled, it
@@ -71,7 +71,7 @@ OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
 # Also, you will most likely have a value in the keystone policy file like this
 #    "cloud_admin": "rule:admin_required and domain_id:<your domain id>"
 # This value must match the domain id specified there.
-OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = 'Default'
+OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = 'default'
 
 # Set this to True to enable panels that provide the ability for users to
 # manage Identity Providers (IdPs) and establish a set of rules to map

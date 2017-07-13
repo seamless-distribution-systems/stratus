@@ -1,9 +1,7 @@
-- name: Restart all services  [ INSTALLATION FOR COMPUTE IS DONE, RESTARTING SERVICES ]
+- name: Restart all services
   systemd: name={{ item }} state=restarted
   with_items:
     - libvirtd.service
     - openstack-nova-compute.service
     - neutron-linuxbridge-agent.service
     - openstack-nova-compute.service
-- debug: 
-    msg: "the current time is {{ ansible_date_time.time }}"

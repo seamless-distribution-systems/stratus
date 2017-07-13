@@ -1,10 +1,5 @@
 
 # Environment
-- debug: 
-    msg: "the current time is {{ ansible_date_time.time }}"
-- name: Sync with ntp server (pool.ntp.org)
-  shell: ntpdate pool.ntp.org
-  ignore_errors: True
 - name: Base pakgs
   yum: name={{ item }} state=present
   with_items:
@@ -15,7 +10,7 @@
     - wget
     - vim
 - name: download pip
-  command: wget http://bootstrap.pypa.io/get-pip.py
+  get_url: url=http://bootstrap.pypa.io/get-pip.py dest=/root/
 - name: Installing pip
   command: python /root/get-pip.py
 - name: Disbling NetworkManager
@@ -28,6 +23,7 @@
     block: |
       {{ controller }} controller
       {{ compute }} compute
+      {{ cinder }} cinder
 - name: Install NTP
   yum: name=chrony
 - name: Copy chrony.conf

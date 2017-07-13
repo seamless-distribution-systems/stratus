@@ -2,15 +2,14 @@
 # All values of username and passwords here are customizable
 
 # Put the IP addresses of controller and compute that was put in inventory file under section [controllers] and [compute]
-controller: 10.0.0.5
-compute: 10.0.0.9
-
+controller: 192.168.100.3
+compute: 192.168.100.2
+cinder: 192.168.100.6
 
 # Management Network
-management_subnet: 10.0.0.0/24
+management_subnet: 192.168.100.0/23
 man_ip_controller_node: "{{ controller }}"
 man_ip_compute_node: "{{ compute }}"
-
 
 # RabbitMQ 
 rabbit_pass: RA_PASS
@@ -32,9 +31,9 @@ nova_db_pass: NO_DBPASS
 placement_user_pass: PL_PASS
 
 #Neutron
-COMMON_PROVIDER_INTERAFACE: eth0
-neutron_db_pass: NEU_DBPASS
-neutron_user_pass: NEU_PASS
+COMMON_PROVIDER_INTERAFACE: enp2s0
+neutron_db_pass: NE_DBPASS
+neutron_user_pass: NE_PASS
 metadata_secret_controller: METADATA_SECRET
   ### For controller node 
 provider_interface_controller: "{{ COMMON_PROVIDER_INTERAFACE }}"
@@ -52,16 +51,34 @@ glance_img_location: /var/lib/glance/images/
 
 
 
+#Heat
+heat_domain_admin_pass: HEAT_DOMAIN_PASS
+heat_pass: HE_PASS
+heat_db_pass: HE_DBPASS
+
+
+#Cinder
+cinder_pass: CI_PASS
+cinder_db_pass: CI_DBPASS
+
+
+#Telemetry
+use_telemetry: False # By default it is set to false
+ceilometer_pass: CE_PASS
+ceilometer_dbpass: CE_DBPASS
+gnocchi_pass: GN_PASS
+
+
 # Self service
-selfservice_gateway: 192.168.0.1
-selfservice_cidr: 192.168.0.0/24
+selfservice_gateway: 172.16.0.1
+selfservice_cidr: 172.16.0.0/24
 
 #Provider
-start_provider_subnet_pool_ip: 10.10.65.50
-end_provider_subnet_pool_ip: 10.10.65.55
+start_provider_subnet_pool_ip: 10.0.0.50
+end_provider_subnet_pool_ip: 10.0.0.65
 provider_dns: 8.8.8.8
-provider_gateway: 10.10.64.1
-provider_subnet_cidr: 10.10.64.0/23
+provider_gateway: 10.0.0.1
+provider_subnet_cidr: 10.0.0.0/24
 
 #RC
 adminrc:
@@ -84,4 +101,4 @@ demorc:
   OS_AUTH_URL: http://controller:35357/v3
   OS_IDENTITY_API_VERSION: 3
   OS_IMAGE_API_VERSION: 2
-                          
+

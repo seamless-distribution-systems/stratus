@@ -1,0 +1,22 @@
+How Tos:
+--------
+
+In site.yml
+	1) Set IPs for controller, compute, cinder nodes in site.yml
+	2) Set the correct passwords for each nodes
+
+In group_vars/simple-setup
+	1) Set controller, compute and cinder node IPs at the beginning
+	2) management_subnet has to be set as:
+		If your controller,compute,cinder nodes are of the IPs (say 192.168.100.3/2/6),
+		set the subnet to 192.168.100.0/23
+	3) Setting the Provider network settings in #Neutron section.
+		If the both your controller and compute node's management interface name if same (say enp2s0),
+		set COMMON_PROVIDER_INTERAFACE to enp2s0. If they are not same,   
+		set the interface name for controller in provider_interface_controller and for compute in provider_interface_compute respectively.
+	4) Set the IP ranges for your self service network (private IPs for your vms) in # Self-service section
+	5) Set the provider network range details in #Provider section. (We used two diffent network ranges, one for management, and another for provider[unnumbered])
+	
+Using cinder:
+------------
+	1) Have a raw block device (dev/sdb) for using as a cinder block on cinder node (You can do with a flash drive too, as a cinder block) 

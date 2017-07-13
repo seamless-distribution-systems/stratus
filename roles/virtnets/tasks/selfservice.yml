@@ -1,9 +1,17 @@
+- name: Check if selfservice network for demo user exists
+  shell: '[[ -z $(openstack network list|grep selfservice) ]] && echo "not present" || echo "present"'
+  environment: "{{ adminrc }}"
+  register: selfservice_network_presence
+
 - name: Create the network self-service
   shell: openstack network create selfservice
+  when: selfservice_network_presence.stdout ==  "not present"
   environment: "{{ demorc }}"
   ignore_errors: True
+
 - name: Create a subnet on the network
   shell: openstack subnet create --network selfservice --dns-nameserver {{ provider_dns }} --gateway {{ selfservice_gateway }} --subnet-range {{ selfservice_cidr }} selfservice
+  when: selfservice_network_presence.stdout ==  "not present"
   environment: "{{ demorc }}" 
   ignore_errors: True
 
@@ -14,13 +22,18 @@
 
 - name: Create the router
   shell: openstack router create demo_router
+  when: selfservice_network_presence.stdout ==  "not present"
   environment: "{{ demorc }}"
   ignore_errors: True
+
 - name: Add the self-service network subnet as an interface on the router
   shell: neutron router-interface-add demo_router selfservice
+  when: selfservice_network_presence.stdout ==  "not present"
   environment: "{{ demorc }}"
   ignore_errors: True
+
 - name: Set a gateway on the provider network on the router
   shell: neutron router-gateway-set demo_router provider 
+  when: selfservice_network_presence.stdout ==  "not present"
   environment: "{{ demorc }}" 
   ignore_errors: True 

@@ -7,12 +7,19 @@
   mysql_user: name=keystone host={{ item }} password={{ keystone_db_pass }} priv="keystone.*:ALL,GRANT" state=present
   with_items:
     - controller
+    - localhost
 - name: Install keystone,httpd,mod_wsgi
   yum: name={{ item }}
   with_items:
     - openstack-keystone
     - httpd
     - mod_wsgi
+
+- name: Check if identity service entity exists
+  shell: '[[ -z $(openstack service list|grep identity) ]] && echo "not present" || echo "present"'
+  register: identity_service_presence
+  environment: "{{ adminrc }}"
+
 - name: Copy /etc/keystone/keystone.conf
   template: src=../templates/keystone.conf dest=/etc/keystone/keystone.conf
 - name: Populate the Identity service database
@@ -35,6 +42,9 @@
   systemd: name=httpd.service enabled=yes state=started
 - name: Copy RC file for ADMIN
   template: src=../templates/adminrc dest=/root/adminrc
+
+
+
 - name: Create a domain, projects, users, and roles
   shell: openstack {{ item }}
   with_items:
@@ -44,4 +54,5 @@
     - role create user
     - role add --project demo --user demo user
   environment: "{{ adminrc }}"
+  when: identity_service_presence.stdout == "not present"
   ignore_errors: True

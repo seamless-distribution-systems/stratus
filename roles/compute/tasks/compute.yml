@@ -15,9 +15,19 @@
     line: 'virt_type = kvm'
     state: present
   when: hwacc.stdout > 0
+
+
+- name: Setting directory permissions for /var/log/nova
+  file: path=/var/log/nova mode=0777 recurse=yes owner=nova group=nova
+  ignore_errors: True
+
+
+
 - name: Start and Enable Nova services
   systemd: name={{ item }} enabled=yes state=started
   with_items:
     - libvirtd.service
     - openstack-nova-compute.service
+
+
 

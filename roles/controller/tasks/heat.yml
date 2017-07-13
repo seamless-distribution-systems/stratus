@@ -1,0 +1,118 @@
+- name: Create heat DB
+  mysql_db: name=heat state=present
+  ignore_errors: True
+- name: Grant permissions to glance DB
+  mysql_user: name=heat host={{ item }} password={{ heat_db_pass }} priv="heat.*:ALL,GRANT" state=present
+  with_items:
+    - controller
+  ignore_errors: True
+
+
+- name: Check if heat service already present
+  shell: '[[ -z $(openstack service list|grep heat) ]] && echo "not present" || echo "present"'
+  register: heat_service_presence
+  environment: "{{ adminrc }}"
+
+
+
+- name: Create the heat user
+  command: openstack user create --domain default --password {{ heat_pass }} heat
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Add the admin role to the heat user
+  command: openstack role add --project service --user heat admin
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+
+- name: Create the heat and heat-cfn service entities
+  command: openstack service create --name {{ item.name }} --description "Orchestration" {{ item.service }}
+  with_items:
+    - { name: 'heat',service: 'orchestration'}
+    - { name: 'heat-cfn',service: 'cloudformation'}
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the Orchestration service API endpoints Part 1 
+  command: openstack endpoint create --region {{ region_one }} orchestration {{ item }} http://controller:8004/v1/%\(tenant_id\)s
+  with_items:
+    - public
+    - internal
+    - admin
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the Orchestration service API endpoints Part 1
+  command: openstack endpoint create --region RegionOne cloudformation {{ item }} http://controller:8000/v1
+  with_items:
+    - public
+    - internal
+    - admin
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the heat domain that contains projects and users for stacks
+  command: openstack domain create --description "Stack projects and users" heat
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the heat_domain_admin user to manage projects and users in the heat domain
+  command: openstack user create --domain heat --password {{ heat_domain_admin_pass }}  heat_domain_admin
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Add the admin role
+  command: openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the heat_stack_owner role
+  command: openstack role create heat_stack_owner
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Add the heat_stack_owner role to the demo project 
+  command: openstack role add --project demo --user demo heat_stack_owner
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Create the heat_stack_user role
+  command: openstack role create heat_stack_user
+  when: heat_service_presence.stdout == "not present"
+  ignore_errors: True
+  environment: "{{ adminrc }}"
+
+- name: Installing pkgs
+  yum: name={{ item }}
+  with_items:
+    - openstack-heat-api
+    - openstack-heat-api-cfn
+    - openstack-heat-engine
+- name: Configuring the heat conf
+  template: src=../templates/heat.conf dest=/etc/heat/heat.conf
+- name: Populate the Orchestration database
+  command: su -s /bin/sh -c "heat-manage db_sync" heat
+
+
+#- name: Setting directory permissions for /var/log/heat
+#  file: path=/var/log/heat mode=0777 recurse=yes owner=heat group=heat
+#  ignore_errors: True
+
+
+- name: Start the Orchestration services
+  systemd: name={{ item }} enabled=yes state=started
+  with_items:
+    - openstack-heat-api.service
+    - openstack-heat-api-cfn.service
+    - openstack-heat-engine.service

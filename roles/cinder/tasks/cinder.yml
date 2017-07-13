@@ -1,0 +1,42 @@
+- name: Create the hosts file
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ controller }} controller
+      {{ compute }} compute
+      {{ cinder }} cinder
+- name: Openstack repo
+  yum: name=centos-release-openstack-newton
+- name: Install the LVM packages
+  yum: name=lvm2
+- name: Start the LVM metadata service and configure it to start when the system boots
+  systemd: name=lvm2-lvmetad.service state=started enabled=True
+- name: Create the LVM physical volume /dev/sdb
+  shell: yes|pvcreate /dev/sdb
+- name: Create the LVM volume group cinder-volumes
+  command: vgcreate cinder-volumes /dev/sdb
+- name: Configure lvm.conf
+  template: src=../templates/lvm.conf dest=/etc/lvm/lvm.conf
+- name: Install the package
+  yum: name={{ item }} 
+  with_items:
+    - libselinux-python
+    - openstack-utils
+    - openstack-cinder 
+    - targetcli
+    - python-keystone
+- name: Configure cinder.conf
+  template: src=../templates/cinder.conf dest=/etc/cinder/cinder.conf
+
+
+#- name: Setting directory permissions for /var/log/cinder
+#  file: path=/var/log/cinder mode=0777 recurse=yes owner=cinder group=cinder
+#  ignore_errors: True
+
+
+- name: Enabling and starting services
+  systemd: name={{ item }} state=started enabled=True
+  with_items:
+    - openstack-cinder-volume.service
+    - target.service
+

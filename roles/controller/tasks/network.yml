@@ -5,6 +5,12 @@
   mysql_db: name=neutron state=present
 - name: Grant permissions to Neutron DB
   mysql_user: name=neutron host=controller password={{ neutron_db_pass }} priv="neutron.*:ALL,GRANT" state=present
+
+- name: Check if neutron service entity exists
+  shell: '[[ -z $(openstack service list|grep neutron) ]] && echo "not present" || echo "present"'
+  register: neutron_service_presence
+  environment: "{{ adminrc }}"
+
 - name: Register Neutron to openstack
   shell: openstack {{ item }}
   with_items:
@@ -16,6 +22,9 @@
     - endpoint create --region {{ region_one }} network admin http://controller:9696
   environment: "{{ adminrc }}"
   ignore_errors: True
+  when: neutron_service_presence.stdout == "not present"
+
+
 # # Networking option 2 ( Self - Service Networks)
 - name: Install the packages
   yum: name={{ item }}
@@ -56,6 +65,12 @@
   file: src=/etc/neutron/plugins/ml2/ml2_conf.ini dest=/etc/neutron/plugin.ini state=link
 - name: Populate Neutron DB
   command: sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+
+#- name: Setting directory permissions for /var/log/neutron
+#  file: path=/var/log/neutron mode=0777 recurse=yes owner=neutron group=neutron
+#  ignore_errors: True
+
+
 - name: Restart Nova api service
   systemd: name=openstack-nova-api.service state=restarted
 - name: Start and Enable Neutron services

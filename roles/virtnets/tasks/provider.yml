@@ -1,10 +1,18 @@
-- debug:
-    msg: "the current date is {{ ansible_date_time.time }}"
+- name: Check if provider network exists
+  shell: '[[ -z $(openstack network list|grep provider) ]] && echo "not present" || echo "present"'
+  environment: "{{ adminrc }}"
+  register: provider_network_presence
+
+
 - name: Create the network provider
   command: openstack network create  --share --external  --provider-physical-network provider --provider-network-type flat provider
+  when: provider_network_presence.stdout == "not present"
   environment: "{{ adminrc }}"
   ignore_errors: True
+
+
 - name: Create a subnet on the network
   command: openstack subnet create --network provider --allocation-pool start={{ start_provider_subnet_pool_ip }},end={{ end_provider_subnet_pool_ip }} --dns-nameserver {{ provider_dns }} --gateway {{ provider_gateway }} --subnet-range {{ provider_subnet_cidr }} provider 
+  when: provider_network_presence.stdout == "not present"
   environment: "{{ adminrc }}" 
   ignore_errors: True

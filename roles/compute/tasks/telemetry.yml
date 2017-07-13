@@ -1,0 +1,25 @@
+- name: Install the packages
+  yum: name=openstack-ceilometer-compute
+- name: Configure ceilometer.conf
+  template: src=../templates/ceilometer.conf dest=/etc/ceilometer/ceilometer.conf
+
+- name: Configure nova.conf Part I
+  blockinfile:
+    path: /etc/nova/nova.conf
+    insertafter: "DEFAULT"
+    content: |
+      instance_usage_audit = True
+      instance_usage_audit_period = hour
+      notify_on_state_change = vm_and_task_state
+
+- name: Configure nova.conf Part II
+  blockinfile:
+    path: /etc/nova/nova.conf
+    insertafter: "oslo_messaging_notifications"
+    content: |
+      driver = messagingv2
+- name: Start end enable the services
+  systemd: name={{ item }} state=restarted enabled=True
+  with_items:
+    - openstack-ceilometer-compute.service
+    - openstack-nova-compute.service

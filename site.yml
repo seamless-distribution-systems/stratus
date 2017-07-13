@@ -2,3 +2,4 @@
 - include: controller_node.yml
 - include: compute_node.yml
 - include: virtnet_on_controller.yml
+- include: cinder_node.yml

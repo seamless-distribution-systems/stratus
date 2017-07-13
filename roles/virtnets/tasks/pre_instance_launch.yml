@@ -1,13 +1,28 @@
+- name: Check if cirros image present
+  shell: '[[ -z $(openstack image list|grep cirros) ]] && echo "not present" || echo "present"'
+  environment: "{{ adminrc }}"
+  register: image_presence_check
+
+- name: Check if m1.nano flavor present
+  shell: '[[ -z $(openstack flavor list --format value|grep m1.nano) ]] && echo "not present" || echo "present"'
+  environment: "{{ adminrc }}"
+  register: flavor_presence_check
+
 - name: Download cirros
   get_url: url=http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img dest=/root/cirros.img
+
 - name: Upload cirros image
   shell: openstack image create --disk-format qcow2 --container-format bare --public --file /root/cirros.img cirros
+  when: image_presence_check.stdout == "not present"
   environment: "{{ adminrc }}"
   ignore_errors: True
+
 - name: Create m1.nano flavour
   shell: openstack flavor create --id 0 --vcpus 1 --ram 64 --disk 1 m1.nano
+  when: flavor_presence_check.stdout == "not present"
   environment: "{{ adminrc }}"
   ignore_errors: True
+
 - name: Create icmp security group for demo user
   shell: openstack security group rule create --proto icmp default
   environment: "{{ demorc }}"
@@ -16,7 +31,8 @@
   shell: openstack security group rule create --proto tcp --dst-port 22 default
   environment: "{{ demorc }}"
   ignore_errors: True
-- debug:
-    msg: "the current time is {{ ansible_date_time.time }}"
-- name: Discover compute hosts
-  shell: sh -c "nova-manage cell_v2 discover_hosts --verbose" nova
+#- name: Generating a keypair for tenant demo
+#  command: ssh-keygen -q -N ""
+#- name: Upload the key pair
+#  command: openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey
+#  environment: "{{ demorc }}"

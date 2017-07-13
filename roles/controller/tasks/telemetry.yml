@@ -1,0 +1,130 @@
+#NoSQL
+- name: Copy mongo repo
+  template: src=../templates/mongo.repo dest=/etc/yum.repos.d/mongo.repo 
+
+- name: Install the MongoDB packages
+  yum: name={{ item }}
+  with_items:
+    - mongodb-org-3.0.15
+    - mongodb-org-server-3.0.15
+
+#- file:
+#    path: /var/log/mongodb/
+#    owner: mongod
+#    group: mongod
+#    state: directory
+#    mode: 0777
+
+- name: Configure mongo
+  template: src=../templates/mongod.conf dest=/etc/mongod.conf
+
+- name: Enable and start mongoDB
+  systemd: name=mongod.service state=started enabled=yes
+
+- name: Install pymongo
+  pip: name=pymongo
+
+
+#- file:
+#    path: /var/log/mongodb/ 
+#    state: directory
+#    mode: g+s
+
+# Ceilometer
+#- mongodb_user:
+#    login_host: controller
+#    database: ceilometer
+#    name: ceilometer
+#    password: "{{ ceilometer_dbpass }}"
+#    roles: readWrite,dbAdmin
+#    state: present
+
+- name: Create the ceilometer database
+  shell: mongo --host controller --eval 'db = db.getSiblingDB("ceilometer");db.createUser({user:"ceilometer",pwd:"{{ ceilometer_dbpass }}",roles:[ "readWrite", "dbAdmin" ]})'
+  ignore_errors: True
+- name: Check if telemetry service entity exists
+  shell: '[[ -z $(openstack service list|grep metering) ]] && echo "not present" || echo "present"'
+  register: telemetry_service_presence
+  environment: "{{ adminrc }}"
+
+- name: Create the ceilometer user
+  shell: openstack user create --domain default --password {{ ceilometer_pass }} ceilometer
+  when: telemetry_service_presence.stdout == "not present"
+  environment: "{{ adminrc }}"
+
+- name: Add the admin role to the ceilometer user
+  shell: openstack role add --project service --user ceilometer admin
+  when: telemetry_service_presence.stdout == "not present"
+  environment: "{{ adminrc }}"
+
+- name: Create the ceilometer service entity
+  shell: openstack service create --name ceilometer  --description "Telemetry" metering
+  environment: "{{ adminrc }}"
+  when: telemetry_service_presence.stdout == "not present"
+ 
+- name: Create the Telemetry service API endpoints
+  shell: openstack endpoint create --region {{ region_one }} metering {{ item }} http://controller:8777
+  with_items:
+    - public
+    - internal
+    - admin
+  environment: "{{ adminrc }}"
+  when: telemetry_service_presence.stdout == "not present"
+
+- name: Install the packages
+  yum: name={{ item }}
+  with_items:
+    - openstack-ceilometer-api
+    - openstack-ceilometer-collector
+    - openstack-ceilometer-notification
+    - openstack-ceilometer-central
+    - python-ceilometerclient
+- name: Configure ceilometer
+  template: src=../templates/ceilometer.conf dest=/etc/ceilometer/ceilometer.conf
+
+- name: Create the /etc/httpd/conf.d/wsgi-ceilometer.conf
+  template: src=../templates/wsgi-ceilometer.conf dest=/etc/httpd/conf.d/wsgi-ceilometer.conf
+
+- name: Reload the Apache HTTP server
+  systemd: name=httpd.service state=restarted
+
+#- name: Setting directory permissions for /var/log/telemetry
+#  file: path=/var/log/telemetry mode=0777 recurse=yes owner=telemetry group=telemetry
+#  ignore_errors: True
+
+- name: Start the Telemetry services
+  systemd: name={{ item }} state=restarted enabled=True
+  with_items:
+    - openstack-ceilometer-notification.service
+    - openstack-ceilometer-central.service
+    - openstack-ceilometer-collector.service
+
+
+
+#Neutron
+- name: Configure Neutron for Telemetry
+  blockinfile:
+    dest: /etc/neutron/neutron.conf 
+    insertafter: "oslo_messaging_notifications"
+    content: |
+      driver = messagingv2
+
+
+- name: Restart the Networking service
+  systemd: name=neutron-server.service state=restarted
+
+
+#Heat
+- name: Configure Heat for Telemetry
+  blockinfile:
+    dest: /etc/heat/heat.conf
+    insertafter: "oslo_messaging_notifications"
+    content: |
+      driver = messagingv2
+
+- name: Restart the Orchestrations(Heat) service
+  systemd: name={{ item }} state=restarted
+  with_items:
+    - openstack-heat-api.service 
+    - openstack-heat-api-cfn.service
+    - openstack-heat-engine.service

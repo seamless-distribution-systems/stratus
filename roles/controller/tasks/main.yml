@@ -7,3 +7,6 @@
 - include: glance.yml 
 - include: network.yml
 - include: post_install.yml
+- include: heat.yml
+- include: cinder.yml
+#- include: telemetry.yml
